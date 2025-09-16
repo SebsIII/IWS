@@ -12,3 +12,5 @@ The whole size of the facility is apporximately **15x15x5cm**.
 ## The output
 
 The MCU along with the Ethernet Shield hosts a **HTTP server** which, when called, returns a **JSON string** containing all of the essential data of the station itself and the value of each sensor.
+
+![JSON-HTTP](https://github.com/SebsIII/IWS/blob/43692908104991b1652bcf4ea6fd69c47edac72a/Gallery/JSON-HTTP.png)
