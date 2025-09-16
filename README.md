@@ -2,15 +2,32 @@
 The Instantaneous Weather Station (**IWS**) is a weather station that returns instantaneous weather data once asked.
 It works with a **nucleo F401RE MCU and a W5100 Ethernet Shield** with those sensors:
 
-- *DHT11*: Temperature and Humidity
-- *BMP280*: Temperature, Pressure and approx altitude
-- *RAIN sensor*: Rain level
+- *DHT11*: Temperature and Humidity (C°, %)
+- *BMP280*: Temperature, Pressure and approx altitude (C°, Pa, m)
+- *RAIN sensor*: Rain level (1023 false, 0 true)
 
-The whole station is then powered with a 230VAC-5VDC inverter built directly in the station.
+The whole station is then **powered with a 230VAC-5VDC inverter** built directly in the station.
 The whole size of the facility is apporximately **15x15x5cm**.
+
+## The goal
+
+The main goal of the IWS is to **return raw weather data to each local system that needs them**, not to be a weather station only.
+Because of that the output of the IWS is in JSON format, which is the best for sending and receiving data like IWS' Sensors.
+
+The IWS data can be regulary sent to a local server wich could save and analyse them to get weather forsecast.
 
 ## The output
 
 The MCU along with the Ethernet Shield hosts a **HTTP server** which, when called, returns a **JSON string** containing all of the essential data of the station itself and the value of each sensor.
 
 ![JSON-HTTP](https://github.com/SebsIII/IWS/blob/43692908104991b1652bcf4ea6fd69c47edac72a/Gallery/JSON-HTTP.png)
+
+Each sensor value refers to the **standard SI units**.
+
+## The link
+
+The HTTP server of the IWS can be found at:
+
+```
+192.168.1.200
+```
