@@ -2,7 +2,7 @@
 The Instantaneous Weather Station (**IWS**) is a weather station that returns instantaneous weather data once asked.
 It works with a **nucleo F401RE MCU and a W5100 Ethernet Shield** with those sensors:
 
-- *DHT11*: Temperature and Humidity (C°, %)
+- ~~*DHT11*: Temperature and Humidity (C°, %)~~ no longer working
 - *BMP280*: Temperature, Pressure and approx altitude (C°, Pa, m)
 - *RAIN sensor*: Rain level (1023 false, 0 true)
 
