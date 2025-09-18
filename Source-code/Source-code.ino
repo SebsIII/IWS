@@ -21,20 +21,19 @@
 #include <SPI.h>
 #include <Ethernet.h>
 #include <Wire.h>
-#include "DHT.h"
+//#include "DHT.h"
 #include <Adafruit_BMP280.h>
 
-#define DHTPIN A2
-#define DHTTYPE DHT11
+//#define DHTPIN A2     THE DHT11 DOES NO LOGER WORK ON THE IWS
+//#define DHTTYPE DHT11
 #define RAIN A1
 #define LED A0
 
 Adafruit_BMP280 bmp;
-DHT dht(DHTPIN, DHTTYPE);
+//DHT dht(DHTPIN, DHTTYPE);
 
-// Vars nomenclature: SENSORvalueValue2
 
-float DHTtemp, DHThum, BMPtemp, BMPpress, BMPapproxAltitude, RAINvalue;
+float Temperature, Pressure, ApproxAltitude, RainLevel;
 unsigned BMPstatus, daysPassed = 0;
 
 byte mac[] = {
@@ -47,8 +46,11 @@ EthernetServer server(80);
 void setup() {
   //Startup pinModes and inits
   pinMode(LED, OUTPUT);
+  digitalWrite(LED, HIGH);
+  
+  pinMode(A2, OUTPUT);
+  digitalWrite(A2, LOW); // prevent short circuits
   pinMode(RAIN, INPUT);
-  digitalWrite(LED, LOW);
   Ethernet.init(10);
 
   Serial.begin(9600);
@@ -62,7 +64,7 @@ void setup() {
                   Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 
-  dht.begin();
+  //dht.begin();
 
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
     Serial.println("Ethernet shield was not found.");
@@ -74,6 +76,7 @@ void setup() {
 
   server.begin();
   Serial.println("Shouldn't rain today huh?");
+  digitalWrite(LED, LOW);
 }
 
 
@@ -88,12 +91,10 @@ void loop() {
         char c = client.read();
         if (c == '\n' && currentLineIsBlank) {
 
-          BMPtemp = bmp.readTemperature();
-          BMPpress = bmp.readPressure();
-          BMPapproxAltitude = bmp.readAltitude(1013.25);
-          DHTtemp = dht.readTemperature();
-          DHThum = dht.readHumidity();
-          RAINvalue = analogRead(RAIN);
+          Temperature = bmp.readTemperature();
+          Pressure = bmp.readPressure();
+          ApproxAltitude = bmp.readAltitude(1013.25);
+          RainLevel = analogRead(RAIN);
 
           client.println("HTTP/1.1 200 OK");
           client.println("Content-Type: application/json");
@@ -103,23 +104,17 @@ void loop() {
           
           client.println("{");
           client.println("\"Data\": {");
-            client.print("  \"BMPtemp\":");
-            client.print(BMPtemp);
+            client.print("  \"Temperature\":");
+            client.print(Temperature);
             client.println(",");
-            client.print("  \"BMPpress\":");
-            client.print(BMPpress);
+            client.print("  \"Pressure\":");
+            client.print(Pressure);
             client.println(",");
-            client.print("  \"BMPapproxAltitude\":");
-            client.print(BMPapproxAltitude);
+            client.print("  \"ApproxAltitude\":");
+            client.print(ApproxAltitude);
             client.println(",");
-            client.print("  \"DHTtemp\":");
-            client.print(DHTtemp);
-            client.println(",");
-            client.print("  \"DHThum\":");
-            client.print(DHThum);
-            client.println(",");
-            client.print("  \"RAINvalue\":");
-            client.println(RAINvalue);
+            client.print("  \"RainLevel\":");
+            client.println(RainLevel);
           client.println("},");
           client.print("\"Millis\":");
           client.print(millis());
