@@ -28,13 +28,15 @@
 //#define DHTTYPE DHT11
 #define RAIN A1
 #define LED A0
+#define MAX_ALLOWED_TEMPERATURE 60
 
 Adafruit_BMP280 bmp;
 //DHT dht(DHTPIN, DHTTYPE);
 
 
-float Temperature, Pressure, ApproxAltitude, RainLevel;
-unsigned BMPstatus, daysPassed = 0;
+float Temperature, Pressure, ApproxAltitude, RainLevel, ToD;
+unsigned daysPassed = 0;
+bool BMPstatus;
 
 byte mac[] = {
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
@@ -64,7 +66,7 @@ void setup() {
                   Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 
-  //dht.begin();
+  BMPstatus = true;
 
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
     Serial.println("Ethernet shield was not found.");
@@ -96,6 +98,18 @@ void loop() {
           ApproxAltitude = bmp.readAltitude(1013.25);
           RainLevel = analogRead(RAIN);
 
+          if(Temperature >= MAX_ALLOWED_TEMPERATURE){
+            BMPstatus = false;
+            ToD = millis();
+            bmp.reset();
+
+            Temperature = bmp.readTemperature();
+            Pressure = bmp.readPressure();
+            ApproxAltitude = bmp.readAltitude(1013.25);
+            RainLevel = analogRead(RAIN);
+          }
+
+
           client.println("HTTP/1.1 200 OK");
           client.println("Content-Type: application/json");
           client.println("Connection: close");
@@ -122,9 +136,17 @@ void loop() {
           client.print("\"DaysPassed\":");
           client.print(daysPassed);
           client.println(",");
-          client.println("\"IWSmessage\":\"Never kill the inner child.\"");
+          if(BMPstatus == false){
+            client.print("\"IWSmessage\":\"The BMP resetted, hoping data will now be right.\"");
+            client.println(",");
+            client.print("\ToD\":");
+            client.println(ToD);
+          } else {
+            client.println("\"IWSmessage\":\"All clear.\"");
+          }
           client.println("}");
           
+          BMPstatus = true;
           digitalWrite(LED, LOW);
           break;
         }
@@ -143,7 +165,7 @@ void loop() {
     updateDaysPassed(millis());
     digitalWrite(LED, LOW);
   }
-  delay(50);
+  delay(200);
 }
 
 int updateDaysPassed(int ms){
