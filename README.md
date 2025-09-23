@@ -16,6 +16,12 @@ Because of that the output of the IWS is in JSON format, which is the best for s
 
 The IWS data can be regulary sent to a local server wich could save and analyse them to get weather forsecast.
 
+## Power consuption
+
+The IWS has a power consumption of **220mA at 5VDC**  *1W~*, but since it is powered with 230VAC, the real current is **4,5 mA**.
+
+In ideal conditions the IWS will reach the 1kW of power consumed in *1000 hours* or nearly **6 weeks**. 
+
 ## The output
 
 The MCU along with the Ethernet Shield hosts a **HTTP server** which, when called, returns a **JSON string** containing all of the essential data of the station itself and the value of each sensor.
