@@ -24,59 +24,56 @@
 //#include "DHT.h"
 #include <Adafruit_BMP280.h>
 
-//#define DHTPIN A2     THE DHT11 DOES NO LOGER WORK ON THE IWS
-//#define DHTTYPE DHT11
+//VARs and PINs
 #define RAIN A1
 #define LED A0
+#define EthernetCS 10
+
 #define MAX_ALLOWED_TEMPERATURE 60
-
-Adafruit_BMP280 bmp;
-//DHT dht(DHTPIN, DHTTYPE);
-
-
-float Temperature, Pressure, ApproxAltitude, RainLevel, ToD;
+#define MIN_ALLOWED_PRESSURE 0
+#define MAX_BMP_RESET_ATTEMPTS 5
+float Temperature, Pressure, ApproxAltitude, RainLevel;
 unsigned daysPassed = 0;
-bool BMPstatus;
 
+// BMP setup
+Adafruit_BMP280 bmp;
+#define BMPaddr 0x76
+bool BMPstatus, BMPlastStatus;
+
+/*
+
+THE DHT11 DOES NO LOGER WORK ON THE IWS
+
+#define DHTPIN A2     
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+*/
+
+//LAN
 byte mac[] = {
   0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
 };
-IPAddress ip(192, 168, 1, 200); 
-
+IPAddress ip(192, 168, 1, 200);
 EthernetServer server(80);
 
 void setup() {
-  //Startup pinModes and inits
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH);
-  
   pinMode(A2, OUTPUT);
   digitalWrite(A2, LOW); // prevent short circuits
   pinMode(RAIN, INPUT);
-  Ethernet.init(10);
+  Ethernet.init(EthernetCS);
 
   Serial.begin(9600);
+  
+  //STATUP
+
   Ethernet.begin(mac, ip);
-
-  BMPstatus = bmp.begin(0x76);
-
-  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
-                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
-                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
-                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
-                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
-
-  BMPstatus = true;
-
-  if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-    Serial.println("Ethernet shield was not found.");
-    digitalWrite(LED, HIGH);
-    while (true) {
-      delay(1000);
-    }
-  }
-
+  BMPstatus = initBMP();
+  BMPlastStatus = BMPstatus;
   server.begin();
+
+  checkHW(BMPstatus);
   Serial.println("Shouldn't rain today huh?");
   digitalWrite(LED, LOW);
 }
@@ -93,35 +90,26 @@ void loop() {
         char c = client.read();
         if (c == '\n' && currentLineIsBlank) {
 
-          Temperature = bmp.readTemperature();
-          Pressure = bmp.readPressure();
-          ApproxAltitude = bmp.readAltitude(1013.25);
-          RainLevel = analogRead(RAIN);
+          takeMeasurements();
 
-          if(Temperature >= MAX_ALLOWED_TEMPERATURE){
-            BMPstatus = false;
-            if(!ToD){
-              ToD = millis();
+          if(Temperature >= MAX_ALLOWED_TEMPERATURE || Pressure <= MIN_ALLOWED_PRESSURE || !BMPstatus){
+            BMPlastStatus = false;
+            int i = 0;
+            while (Temperature >= MAX_ALLOWED_TEMPERATURE || Pressure <= MIN_ALLOWED_PRESSURE || !BMPstatus){
+              if(i == MAX_BMP_RESET_ATTEMPTS){
+                holdAndWait();
+              }
+              BMPstatus = initBMP();
+              takeMeasurements();
+              i += 1;
             }
-            bmp.begin(0x76);
-
-            bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
-                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
-                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
-                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
-                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
-
-            Temperature = bmp.readTemperature();
-            Pressure = bmp.readPressure();
-            ApproxAltitude = bmp.readAltitude(1013.25);
-            RainLevel = analogRead(RAIN);
+            
           }
 
 
           client.println("HTTP/1.1 200 OK");
           client.println("Content-Type: application/json");
           client.println("Connection: close");
-          //client.println("Refresh: 5"); 
           client.println();
           
           client.println("{");
@@ -144,17 +132,14 @@ void loop() {
           client.print("\"DaysPassed\":");
           client.print(daysPassed);
           client.println(",");
-          if(BMPstatus == false){
-            client.print("\"IWSmessage\":\"The BMP resetted, hoping data will now be right.\"");
-            client.println(",");
-            client.print("\ToD\":");
-            client.println(ToD);
+          if(BMPlastStatus == false){
+            client.println("\"IWSmessage\":\"The BMP resetted, hoping data will now be right.\"");
           } else {
             client.println("\"IWSmessage\":\"All clear.\"");
           }
           client.println("}");
           
-          BMPstatus = true;
+          BMPlastStatus = true;
           digitalWrite(LED, LOW);
           break;
         }
@@ -182,4 +167,46 @@ int updateDaysPassed(int ms){
     daysPassed += 1;
   }
   return daysPassed;
+}
+
+bool initBMP(){
+  bool output = bmp.begin(BMPaddr);
+
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+
+  return output;
+}
+
+void checkHW(bool BMPls){
+  bool output = true;
+  if (Ethernet.hardwareStatus() == EthernetNoHardware) {
+      output = false;
+    }
+  if (Ethernet.linkStatus() == LinkOFF) {
+    output = false;
+  }
+
+  output = output && BMPls;
+
+  if(output == 0 ){
+    holdAndWait();
+  }
+}
+
+void holdAndWait(){ //When this function gets called, it stops every process and puts the IWS in HOLD state
+  digitalWrite(LED, HIGH);
+  while (true){
+    delay(3000000);
+  }
+}
+
+void takeMeasurements(){
+  Temperature = bmp.readTemperature();
+  Pressure = bmp.readPressure();
+  ApproxAltitude = bmp.readAltitude(1013.25);
+  RainLevel = 1023 - analogRead(RAIN);
 }

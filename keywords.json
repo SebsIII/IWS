@@ -1,0 +1,31 @@
+{
+    "vars":{
+        "RAIN":"Rain sensor pin",
+        "LED":"Green LED pin",
+        "MAX_ALLOWED_TEMPERATURE":"Max temperature allowed, used for BMP280 stability checks",
+        "MIN_ALLOWED_PRESSURE": "Min allowed pressure, used for BMP280 stability checks",
+        "MAX_BMP_RESET_ATTEMPTS": "Max attempts of resetting the BMP280 when values are wrong that the IWS tryes before HOLD state, default 5",
+        "Temperature":"Temperature var, in Celsius (C°)",
+        "Pressure": "Atmospheric pressure var, in Pascals (Pa)",
+        "ApproxAltitude":"Approx altitude var from BMP.readAltitude() func, in metres (m)",
+        "RainLevel":"Rain level var, 0 if false, 50~973 true, 974~1023 something conductive on the sensor",
+        "BMPaddr": "BMP280 logic address, 0x76 by default, HEX",
+        "BMPstatus": {
+            "true" : "If BMP is OK",
+            "false" : "If BMP is NOT OK"
+        },
+        "BMPls":"BMP local status",
+        "BMPlastStatus": "Last status of BMP, used for IWSmessage formatting",
+        "mac":"MAC address of the W5100 Ethernet Shield",
+        "ip":"local IP address of the IWS",
+        "server":"local port for communications, 80 HTTP by default",
+        "EthernetCS":"Ethernet Shield local chip select pin, 10 by default"
+    },
+    "funcs":{
+        "checkHW()":"Checks Hardware status and puts the IWS in HOLD state if there are issues",
+        "takeMeasurements()":"Takes measurements and save the outs in the respective vars",
+        "holdAndWait()":"Puts the IWS in HOLD state, to reset it you must restart the IWS",
+        "initBMP()":"Initializes the onboard BMP280",
+        "updateDaysPassed()": "Saves in the 'daysPassed' var how much days passed from last reset, useful to withstand millis() max value of 49.7 days"
+    }
+}
