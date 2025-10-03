@@ -1,0 +1,2 @@
+- The telegram bot for the IWS should have a `/SaveData` command, that saves instantaneuos data with time (or timestamp) in order to later analyse each situation <br>
+- The telegram bot server should automatically save instantaneous data after regular cycles, to get medium values.
