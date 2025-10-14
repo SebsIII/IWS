@@ -60,11 +60,9 @@ void setup() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH);
   pinMode(A2, OUTPUT);
-  digitalWrite(A2, LOW); // prevent short circuits
+  digitalWrite(A2, LOW); // prevent short circuits since the broken DHT11 is still inside the IWS.
   pinMode(RAIN, INPUT);
   Ethernet.init(EthernetCS);
-
-  Serial.begin(9600);
   
   //STATUP
 
@@ -74,7 +72,6 @@ void setup() {
   server.begin();
 
   checkHW(BMPstatus);
-  Serial.println("Shouldn't rain today huh?");
   digitalWrite(LED, LOW);
 }
 
@@ -161,9 +158,9 @@ void loop() {
   delay(200);
 }
 
-int updateDaysPassed(int ms){
-  ms = ms/1000;
-  if(ms/86400 >= 1){
+int updateDaysPassed(unsigned long time){
+  time = time/1000;
+  if(time/86400 > daysPassed){
     daysPassed += 1;
   }
   return daysPassed;
