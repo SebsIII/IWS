@@ -1,4 +1,6 @@
 # IWS
+
+![IWS PROVISORY](https://github.com/SebsIII/IWS/blob/83bd6e8f736783555f9509f43d88b13075795708/Gallery/IMG_20251004_151943.jpg)
 The Instantaneous Weather Station (**IWS**) is a weather station that returns instantaneous weather data once asked.
 It works with a **nucleo F401RE MCU and a W5100 Ethernet Shield** with those sensors:
 
