@@ -63,6 +63,7 @@ void setup() {
   
   //STATUP
 
+
   Ethernet.begin(mac, ip);
   BMPstatus = initBMP();
   BMPlastStatus = BMPstatus;
